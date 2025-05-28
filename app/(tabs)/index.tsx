@@ -1,75 +1,161 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import axios from "axios";
+import React, { useState } from "react";
+import {useRouter} from 'expo-router';
+import {
+  Alert,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+type CurrentWeather = {
+  time: string;
+  interval: number;
+  temperature_2m: number;
+  relative_humidity_2m: number;
+  is_day: number;
+  precipitation: number;
+  rain: number;
+  showers: number;
+  snowfall: number;
+  cloud_cover: number;
+  pressure_msl: number;
+  wind_speed_10m: number;
+  wind_direction_10m: number;
+  wind_gusts_10m: number;
+};
 
 export default function HomeScreen() {
+
+  const router = useRouter();
+
+  const [cityVal, setCityVal] = useState<string>("");
+  const [city, setCity] = useState<string>("");
+  const [weatherData, setWeatherData] = useState<any>(null);
+
+  // Current
+
+  const currentUnits = [
+  "iso8601",
+  "seconds",
+  "°C",
+  "%",
+  '',
+  "mm",
+  "mm",
+  "mm",
+  "cm",
+  "%",
+  "hPa",
+  "km/h",
+  "°",
+  "km/h"
+];
+  const [current, setCurrent] = useState<CurrentWeather | null>(null);
+
+  const fetchWeatherData = async (currentCity: string) => {
+    try {
+      const geoResponse = await axios.get(
+        `https://geocoding-api.open-meteo.com/v1/search?name=${currentCity}`
+      );
+
+      const result = geoResponse.data?.results?.[0];
+      if (!result) {
+        Alert.alert("Not found", "City not found");
+        return;
+      }
+
+      let latitude = result.latitude;
+      let longitude = result.longitude;
+      console.log("Latitude: ", latitude);
+      console.log("Longitude: ", longitude);
+
+      const url = `https://api.open-meteo.com/v1/forecast?timezone=auto&latitude=${latitude}&longitude=${longitude}&hourly=temperature_2m,relative_humidity_2m,dew_point_2m,apparent_temperature,precipitation_probability,rain,precipitation,showers,snowfall,pressure_msl,cloud_cover,cloud_cover_high,cloud_cover_low,cloud_cover_mid,visibility,wind_speed_10m,wind_direction_10m,wind_gusts_10m&current=temperature_2m,relative_humidity_2m,is_day,precipitation,rain,showers,snowfall,cloud_cover,pressure_msl,wind_speed_10m,wind_direction_10m,wind_gusts_10m&daily=temperature_2m_max,temperature_2m_min,apparent_temperature_min,apparent_temperature_max,sunrise,sunset,sunshine_duration,daylight_duration,uv_index_max,uv_index_clear_sky_max,rain_sum,showers_sum,snowfall_sum,precipitation_sum,precipitation_hours,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant`;
+
+      const weatherResponse = await axios.get(url);
+      setCurrent(weatherResponse.data.current);
+      setWeatherData(weatherResponse.data);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      Alert.alert("Error", "Failed to fetch weather data");
+    }
+  };
+
+  const handleCity = () => {
+    const trimmedCity = cityVal.trim();
+    if (trimmedCity.length === 0) {
+      Alert.alert("Alert", "You have to fill this field.", [{ text: "ok" }]);
+      return;
+    }
+    setCity(trimmedCity);
+    setCityVal("");
+    fetchWeatherData(trimmedCity);
+  };
+
+  const goToHourly = () => {
+    router.push('/hourly')
+  }
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+    <View style={styles.container}>
+      <Text style={styles.text}>Main page</Text>
+      <TextInput
+        style={[styles.text, styles.input]}
+        value={cityVal}
+        placeholder="Search a city"
+        placeholderTextColor="red"
+        onChangeText={setCityVal}
+      />
+      <TouchableOpacity onPress={handleCity}>
+        <Text style={styles.text}>Search</Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={goToHourly}>
+        <Text>Hourly data</Text>
+      </TouchableOpacity>
+      {city.length > 0 && (
+        <Text style={styles.text}>Searched city: {city}</Text>
+      )}
+      {weatherData && (
+        <View style={{ marginTop: 20 }}>
+          <Text style={styles.text}>
+            Current Temperature: {weatherData.current?.temperature_2m ?? "N/A"}
+            °C
+          </Text>
+          {currentUnits &&
+            current &&
+            Object.entries(current).map(([key, value], index) => (
+              <Text key={key}>
+                {key} {value} {currentUnits[index]}
+              </Text>
+            ))}
+        </View>
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#222",
+    paddingHorizontal: 20,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  text: {
+    color: "white",
+    fontSize: 18,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  input: {
+    width: "100%",
+    height: 50,
+    padding: 10,
+    marginVertical: 10,
+    borderColor: "whitesmoke",
+    borderRadius: 5,
+    borderWidth: 1,
+    color: "white",
   },
 });
