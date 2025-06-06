@@ -69,7 +69,7 @@ export default function HomeScreen() {
       const url = `https://api.open-meteo.com/v1/forecast?timezone=auto&latitude=${latitude}&longitude=${longitude}&hourly=temperature_2m,relative_humidity_2m,dew_point_2m,apparent_temperature,precipitation_probability,rain,precipitation,showers,snowfall,pressure_msl,cloud_cover,cloud_cover_high,cloud_cover_low,cloud_cover_mid,visibility,wind_speed_10m,wind_direction_10m,wind_gusts_10m&current=temperature_2m,relative_humidity_2m,is_day,precipitation,rain,showers,snowfall,cloud_cover,pressure_msl,wind_speed_10m,wind_direction_10m,wind_gusts_10m`;
 
       const weatherResponse = await axios.get(url);
-
+      console.log(latitude, longitude);
       setCurrent(weatherResponse.data.current);
       setHourlyData(weatherResponse.data.hourly);
 
@@ -117,7 +117,10 @@ export default function HomeScreen() {
           <Text style={styles.subtitle}>Current Weather:</Text>
           {Object.entries(current).map(([key, value], index) => (
             <Text key={key} style={styles.text}>
-              {key}: {value} {currentUnits[index] ?? ""}
+              {key === "time" && typeof value === "string"
+                ? `🕒 Date & Time: ${value.replace("T", " ") ?? ""
+                  }`
+                : `${key}: ${value} ${currentUnits[index] ?? ""}`}
             </Text>
           ))}
         </View>
