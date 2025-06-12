@@ -90,9 +90,9 @@ export default function HomeScreen() {
     fetchWeatherData(trimmed);
   };
 
-  const goToHourly = () => {
-    router.push("/hourly");
-  };
+  // const goToHourly = () => {
+  //   router.push("/hourly");
+  // };
 
   return (
     <View style={styles.container}>
@@ -108,27 +108,77 @@ export default function HomeScreen() {
         <Text style={styles.buttonText}>Search</Text>
       </TouchableOpacity>
 
-      {city.length > 0 && (
-        <Text style={styles.text}>Searched city: {city}</Text>
-      )}
-
       {current && (
         <View style={styles.currentData}>
-          <Text style={styles.subtitle}>Current Weather:</Text>
-          {Object.entries(current).map(([key, value], index) => (
-            <Text key={key} style={styles.text}>
-              {key === "time" && typeof value === "string"
-                ? `🕒 Date & Time: ${value.replace("T", " ") ?? ""
-                  }`
-                : `${key}: ${value} ${currentUnits[index] ?? ""}`}
-            </Text>
-          ))}
+          {city.length > 0 && <Text style={styles.subtitle}>Current Weather in {city}:</Text>}
+          {Object.entries(current).map(([key, value], index) => {
+            const unit = currentUnits[index] ?? "";
+            let displayValue = null;
+            let temp = current.temperature_2m;
+
+            switch (key) {
+              case "interval":
+              case "is_day":
+                return null;
+              case "time":
+                if (typeof value === "string") {
+                  displayValue = `🕒 Date & Time: ${value.replace("T", " ").replaceAll('-', '.')}`;
+                }
+                break;
+              case "temperature_2m":
+                displayValue = `🌡️ Temp: ${value} ${unit}`;
+                break;
+              case "relative_humidity_2m":
+                displayValue = `💧 Humidity: ${value} ${unit}`;
+                break;
+              case "precipitation":
+                displayValue = `🌧️ Precipitation: ${value} ${unit}`;
+                break;
+              case "rain":
+                displayValue = `🌦️ Rain: ${value} ${unit}`;
+                break;
+              case "showers":
+                if (temp < 5) {
+                  displayValue = `🌧️ Showers: ${value} ${unit}`;
+                }
+                break;
+              case "snowfall":
+                if (temp < 5) {
+                  displayValue = `❄️ Snowfall: ${value} ${unit}`;
+                }
+                break;
+              case "cloud_cover":
+                displayValue = `☁️ Cloud Cover: ${value} ${unit}`;
+                break;
+              case "pressure_msl":
+                displayValue = `🌪️ Pressure: ${value} ${unit}`;
+                break;
+              case "wind_speed_10m":
+                displayValue = `💨 Wind Speed: ${value} ${unit}`;
+                break;
+              case "wind_direction_10m":
+                displayValue = `🧭 Wind Direction: ${value} ${unit}`;
+                break;
+              case "wind_gusts_10m":
+                displayValue = `🌬️ Wind Gusts: ${value} ${unit}`;
+                break;
+              default:
+                displayValue = `${key}: ${value} ${unit}`;
+            }
+
+            if (!displayValue) return null;
+
+            return (
+              <Text key={key} style={styles.text}>
+                {displayValue}
+              </Text>
+            );
+          })}
         </View>
       )}
-
-      <TouchableOpacity onPress={goToHourly} style={styles.button}>
+      {/* <TouchableOpacity onPress={goToHourly} style={styles.button}>
         <Text style={styles.buttonText}>Go to Hourly Forecast</Text>
-      </TouchableOpacity>
+      </TouchableOpacity> */}
     </View>
   );
 }

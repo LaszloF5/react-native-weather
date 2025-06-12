@@ -23,7 +23,7 @@ const HourlyScreen = () => {
       <Text style={styles.text}>Hourly Weather Data</Text>
       {hourlyData.time.map((t: any, index: number) => (
         <View key={index} style={styles.item}>
-          <Text style={styles.text}>🕒 Date & Time: {t.replace('T', ' ')}</Text>
+          <Text style={styles.text}>🕒 Date & Time: {t.replace('T', ' ').replaceAll('-', '.')}</Text>
           <Text style={styles.text}>
             🌡️ Temp: {hourlyData.temperature_2m[index]} °C
           </Text>
